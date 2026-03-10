@@ -3,6 +3,7 @@ import pandas as pd
 from skyfield.api import wgs84, load, EarthSatellite
 import pytz
 from datetime import timedelta
+from visualization import plot_suitability
 
 st.set_page_config(page_title="FireSat Pass Predictor", page_icon="🛰️", layout="centered")
 
@@ -128,6 +129,16 @@ if st.button("Predict Passes", type="primary"):
                         continue
                 
                 df = pd.DataFrame(pass_data)
+                
+                # Calculate a "Window Quality Score"
+                # Normalizing both elevation and duration to give a score between 0 and 1
+                df['elev_norm'] = df['Max Elevation (deg)'] / 90.0
+                df['dur_norm'] = df['Duration (sec)'] / df['Duration (sec)'].max()
+                df['Quality Score'] = ((df['elev_norm'] + df['dur_norm']) / 2).round(3)
+                
+                # Drop temporary normalization columns 
+                df.drop(columns=['elev_norm', 'dur_norm'], inplace=True)
+
                 df.set_index("Setup/Pass Index", inplace=True)
                 
                 st.dataframe(df, use_container_width=True)
@@ -140,3 +151,9 @@ if st.button("Predict Passes", type="primary"):
                     file_name=f'firesat_passes_{lat}_{lon}.csv',
                     mime='text/csv',
                 )
+
+                st.header("Pass Suitability Analysis", divider="blue")
+                
+                # Generate plot from the separate visualization module
+                fig = plot_suitability(df, lat, lon, days)
+                st.pyplot(fig)
