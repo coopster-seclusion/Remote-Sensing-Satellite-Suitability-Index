@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import re
 from skyfield.api import wgs84, load, EarthSatellite
 import pytz
 from datetime import timedelta
@@ -78,19 +79,34 @@ The outputs use standard datetime formats ready for geospatial analysis (e.g., G
 st.header("Search Parameters", divider="blue")
 col1, col2 = st.columns(2)
 with col1:
-    lat = st.number_input("Latitude (Decimal Degrees)", value=34.0522, format="%.4f", help="Positive for North, negative for South.")
+    lat_input = st.text_input("Latitude (Decimal Degrees)", value="34.0522", help="Positive for North, negative for South.")
 with col2:
-    lon = st.number_input("Longitude (Decimal Degrees)", value=-118.2437, format="%.4f", help="Positive for East, negative for West.")
+    lon_input = st.text_input("Longitude (Decimal Degrees)", value="-118.2437", help="Positive for East, negative for West.")
 
+days = 14
 col3, col4 = st.columns(2)
 with col3:
-    days = st.slider("Forecast Range (Days)", min_value=1, max_value=14, value=3)
+    st.info("Forecast Range is locked to 14 Days.")
 with col4:
     local_tz_str = st.selectbox("Local Timezone", options=pytz.common_timezones, index=pytz.common_timezones.index('America/Los_Angeles'))
 
-if st.button("Predict Passes", type="primary"):
-    with st.spinner("Fetching orbital data and calculating passes..."):
-        sat = get_satellite_data()
+col5, col6 = st.columns([1, 1])
+with col5:
+    predict_standard = st.button("Predict Passes", type="primary")
+with col6:
+    predict_interactive = st.button("Predict Pass - Interactive", type="primary")
+
+if predict_standard or predict_interactive:
+    lat_valid = bool(re.match(r"^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$", lat_input))
+    lon_valid = bool(re.match(r"^[-+]?((1[0-7]\d|[1-9]?\d)(\.\d+)?|180(\.0+)?)$", lon_input))
+
+    if not lat_valid or not lon_valid:
+        st.error("Invalid Latitude or Longitude coordinate format.")
+    else:
+        lat = float(lat_input)
+        lon = float(lon_input)
+        with st.spinner("Fetching orbital data and calculating passes..."):
+            sat = get_satellite_data()
         if not sat:
             st.error("Could not fetch satellite data from Celestrak. Please try again later.")
         else:
@@ -155,5 +171,10 @@ if st.button("Predict Passes", type="primary"):
                 st.header("Pass Suitability Analysis", divider="blue")
                 
                 # Generate plot from the separate visualization module
-                fig = plot_suitability(df, lat, lon, days)
-                st.pyplot(fig)
+                if predict_interactive:
+                    from inter_visualization import plot_suitability_interactive
+                    fig = plot_suitability_interactive(df, lat, lon, days)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    fig = plot_suitability(df, lat, lon, days)
+                    st.pyplot(fig)

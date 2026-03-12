@@ -2,17 +2,27 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
+def prepare_plot_data(df):
+    plot_df = df.copy()
+    plot_df['Pass_Index'] = plot_df.index
+    plot_df['Plot Time'] = pd.to_datetime(plot_df['Rise Time (Local)'].apply(lambda x: " ".join(x.split()[:2])))
+    return plot_df
+
+def calculate_quality_trendline(plot_df):
+    """
+    Calculates a rolling mean trendline of the Quality Score.
+    """
+    trend_df = plot_df.copy().sort_values('Plot Time')
+    # Use a rolling window of 10% of the data, minimum 3 points
+    window = max(3, len(plot_df) // 10)
+    trend_df['Quality Trend'] = trend_df['Quality Score'].rolling(window=window, min_periods=1).mean()
+    return trend_df['Plot Time'], trend_df['Quality Trend']
+
 def plot_suitability(df, lat, lon, days):
     """
     Generates suitability visualizations for satellite passes.
     """
-    # We need `Rise Time (Local)` as datetime objects for matplotlib
-    plot_df = df.copy()
-    plot_df['Pass_Index'] = plot_df.index
-    
-    # Parse the datetime. The string format is '%Y-%m-%d %H:%M:%S %Z'
-    # Extract just the datetime part, discarding the timezone abbreviation
-    plot_df['Plot Time'] = pd.to_datetime(plot_df['Rise Time (Local)'].apply(lambda x: " ".join(x.split()[:2])))
+    plot_df = prepare_plot_data(df)
 
     plt.style.use('ggplot')
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
