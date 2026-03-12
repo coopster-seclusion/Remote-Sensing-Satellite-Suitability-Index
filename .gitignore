@@ -42,3 +42,6 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Agent context
+agent.md

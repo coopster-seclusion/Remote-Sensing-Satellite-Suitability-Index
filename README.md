@@ -43,13 +43,21 @@ The app outputs a table of viable satellite passes containing:
 - **Rise Time (Local):** Local timestamp for the start of the pass.
 - **Max Elevation:** The peak elevation of the satellite during the pass.
 - **Duration:** How long the pass lasts in seconds.
+- **Quality Score:** A suitability index normalized between 0-1, based equally on the maximum elevation (higher is better) and duration (longer is better) of the pass.
 - **Pass Start/Peak/End (UTC ISO-8601):** Standardized, machine-readable datetime strings. Perfect for indexing in GeoPandas via `pd.to_datetime(...)`.
 
 You can download this table as a CSV directly from the application.
 
+### Visualizations
+The app automatically generates dynamic visual outputs using the Matplotlib library:
+- **Timeline Scatter Plot:** A timeline displaying all valid imaging windows over the requested forecast range. Circle size and color represent the `Quality Score` (darker/larger = better). The single most optimal pass is directly annotated.
+- **Quality Comparison Plot:** Scatter plot showing the relationship between Max Elevation and Pass Duration.
+
+All visualizations are fully interactive and adjust dynamically to the constraints provided.
+
 ## Next Phases / Roadmap
 
+- [x] **Suitability Index Generation:** Score each pass based on exact max elevation and pass duration.
 - [ ] **Data Pipeline Integration:** Connect output CSV directly to GeoPandas automated workflows.
-- [ ] **Suitability Index Generation:** Score each pass based on time-of-day (sun angle), exact max elevation, and expected atmospheric conditions.
 - [ ] **Multi-Satellite Support:** Expand from FireSat-0 to track the full FireSat constellation as more satellites launch (planned for 50+ satellites by 2030).
 - [ ] **Cloud Cover API Integration:** Cross-reference passes with location-specific weather forecasts to weed out obscured optical passes.
