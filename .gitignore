@@ -45,3 +45,6 @@ dmypy.json
 
 # Agent context
 agent.md
+
+# Skyfield Ephemeris Cache
+.skyfield_data/

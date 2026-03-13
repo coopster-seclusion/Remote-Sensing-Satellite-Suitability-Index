@@ -1,6 +1,12 @@
+import os
 import numpy as np
-from skyfield.api import wgs84, load
+from skyfield.api import wgs84, Loader
+from skyfield import almanac
 from datetime import timedelta
+
+# Keep skyfield data downloads in a hidden folder so it doesn't clutter the project root
+SKYFIELD_DIR = os.path.join(os.path.dirname(__file__), '.skyfield_data')
+load = Loader(SKYFIELD_DIR)
 
 MIN_ELEVATION = 33.4  # Minimum viable elevation for the 1500km FireSat swath at 587km altitude
 
@@ -73,3 +79,29 @@ def calculate_passes(satellite, lat, lon, days):
             current_pass = {}
             
     return passes
+
+def get_solar_schedule(lat, lon, days):
+    """
+    Calculate Sunrise and Sunset times for the observer's location over the forecast range.
+    Uses skyfield.almanac.find_discrete to find rising/setting events.
+    Returns a list of dictionaries with UTC time and event type.
+    """
+    ts = load.timescale()
+    t0 = ts.now()
+    t1 = ts.utc(t0.utc_datetime() + timedelta(days=days))
+    
+    eph = load('de421.bsp')
+    observer = wgs84.latlon(lat, lon)
+    
+    f = almanac.sunrise_sunset(eph, observer)
+    t, y = almanac.find_discrete(t0, t1, f)
+    
+    schedule = []
+    for ti, yi in zip(t, y):
+        # yi is 1 for sunrise and 0 for sunset
+        schedule.append({
+            'time_utc': ti.utc_datetime(),
+            'event': 'sunrise' if yi == 1 else 'sunset'
+        })
+        
+    return schedule

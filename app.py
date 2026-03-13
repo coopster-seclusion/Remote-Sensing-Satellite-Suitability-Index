@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 import pytz
-from calculations import fetch_satellite_data, calculate_passes
+from calculations import fetch_satellite_data, calculate_passes, get_solar_schedule
 
 st.set_page_config(page_title="FireSat Pass Predictor", page_icon="🛰️", layout="centered")
 
@@ -55,6 +55,7 @@ if run_prediction:
         else:
             local_tz = pytz.timezone(local_tz_str)
             passes = calculate_passes(sat, lat, lon, days)
+            solar_schedule = get_solar_schedule(lat, lon, days)
             
             if not passes:
                 st.warning(f"No passes found over this location in the next {days} days.")
@@ -107,5 +108,7 @@ if run_prediction:
                 
                 # Generate plot from the separate visualization module
                 from inter_visualization import plot_suitability_interactive
-                fig = plot_suitability_interactive(df, lat, lon, days)
+                fig = plot_suitability_interactive(df, lat, lon, days, solar_schedule, local_tz)
                 st.plotly_chart(fig, use_container_width=True)
+                
+                st.caption("Background colors represent the local solar cycle: **Deep Blue** (Night) — **Orange** (Sunrise/Sunset Golden Hour) — **Bright Yellow** (Mid-day)")

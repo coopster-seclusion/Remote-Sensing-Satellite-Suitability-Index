@@ -7,7 +7,7 @@ def prepare_plot_data(df):
     plot_df['Plot Time'] = pd.to_datetime(plot_df['Rise Time (Local)'].apply(lambda x: " ".join(x.split()[:2])))
     return plot_df
 
-def plot_suitability_interactive(df, lat, lon, days):
+def plot_suitability_interactive(df, lat, lon, days, solar_schedule=None, local_tz=None):
     """
     Generates interactive suitability visualizations for satellite passes using Plotly.
     Primary visualization is a 24-Hour Pass Quality Heatmap with Discrete Mapping.
@@ -114,5 +114,29 @@ def plot_suitability_interactive(df, lat, lon, days):
         clickmode='event+select',
         annotations=annotations
     )
+
+    if solar_schedule and local_tz:
+        sunrise_hours = []
+        sunset_hours = []
+        
+        for event in solar_schedule:
+            # Convert UTC datetime to local timezone
+            local_time = event['time_utc'].astimezone(local_tz)
+            hour_float = local_time.hour + local_time.minute / 60.0 + local_time.second / 3600.0
+            if event['event'] == 'sunrise':
+                sunrise_hours.append(hour_float)
+            elif event['event'] == 'sunset':
+                sunset_hours.append(hour_float)
+                
+        if sunrise_hours and sunset_hours:
+            avg_sunrise = sum(sunrise_hours) / len(sunrise_hours)
+            avg_sunset = sum(sunset_hours) / len(sunset_hours)
+            
+            if avg_sunrise < avg_sunset:
+                fig.add_vrect(x0=-0.5, x1=max(-0.5, avg_sunrise - 0.5), fillcolor="midnightblue", opacity=0.3, layer="below", line_width=0)
+                fig.add_vrect(x0=avg_sunrise - 0.5, x1=avg_sunrise + 0.5, fillcolor="orange", opacity=0.3, layer="below", line_width=0)
+                fig.add_vrect(x0=avg_sunrise + 0.5, x1=avg_sunset - 0.5, fillcolor="gold", opacity=0.3, layer="below", line_width=0)
+                fig.add_vrect(x0=avg_sunset - 0.5, x1=avg_sunset + 0.5, fillcolor="orange", opacity=0.3, layer="below", line_width=0)
+                fig.add_vrect(x0=avg_sunset + 0.5, x1=23.5, fillcolor="midnightblue", opacity=0.3, layer="below", line_width=0)
 
     return fig
