@@ -1,7 +1,11 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from visualization import prepare_plot_data
+def prepare_plot_data(df):
+    plot_df = df.copy()
+    plot_df['Pass_Index'] = plot_df.index
+    plot_df['Plot Time'] = pd.to_datetime(plot_df['Rise Time (Local)'].apply(lambda x: " ".join(x.split()[:2])))
+    return plot_df
 
 def plot_suitability_interactive(df, lat, lon, days):
     """
@@ -88,7 +92,7 @@ def plot_suitability_interactive(df, lat, lon, days):
     plot_height = max(400, len(date_strs) * 30 + 150)
 
     fig.update_layout(
-        title=f'FireSat-0 14-Day High-Precision Heatmap (Lat: {lat}, Lon: {lon})',
+        title=f'FireSat-0 {days}-Day High-Precision Heatmap (Lat: {lat}, Lon: {lon})',
         xaxis=dict(
             title='Hour of Day (Local Time)',
             tickmode='linear',

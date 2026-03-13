@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import re
 import pytz
-from visualization import plot_suitability
 from calculations import fetch_satellite_data, calculate_passes
 
 st.set_page_config(page_title="FireSat Pass Predictor", page_icon="🛰️", layout="centered")
@@ -32,20 +31,15 @@ with col1:
 with col2:
     lon_input = st.text_input("Longitude (Decimal Degrees)", value="-118.2437", help="Positive for East, negative for West.")
 
-days = 14
 col3, col4 = st.columns(2)
 with col3:
-    st.info("Forecast Range is locked to 14 Days.")
+    days = st.select_slider("Forecast Range (Days)", options=[7, 14, 21], value=14)
 with col4:
     local_tz_str = st.selectbox("Local Timezone", options=pytz.common_timezones, index=pytz.common_timezones.index('America/Los_Angeles'))
 
-col5, col6 = st.columns([1, 1])
-with col5:
-    predict_standard = st.button("Predict Passes", type="primary")
-with col6:
-    predict_interactive = st.button("Predict Pass - Interactive", type="primary")
+run_prediction = st.button("Run Prediction", type="primary")
 
-if predict_standard or predict_interactive:
+if run_prediction:
     lat_valid = bool(re.match(r"^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$", lat_input))
     lon_valid = bool(re.match(r"^[-+]?((1[0-7]\d|[1-9]?\d)(\.\d+)?|180(\.0+)?)$", lon_input))
 
@@ -112,10 +106,6 @@ if predict_standard or predict_interactive:
                 st.header("Pass Suitability Analysis", divider="blue")
                 
                 # Generate plot from the separate visualization module
-                if predict_interactive:
-                    from inter_visualization import plot_suitability_interactive
-                    fig = plot_suitability_interactive(df, lat, lon, days)
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    fig = plot_suitability(df, lat, lon, days)
-                    st.pyplot(fig)
+                from inter_visualization import plot_suitability_interactive
+                fig = plot_suitability_interactive(df, lat, lon, days)
+                st.plotly_chart(fig, use_container_width=True)
