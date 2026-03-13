@@ -52,12 +52,14 @@ You can download this table as a CSV directly from the application.
 The app automatically generates dynamic visual outputs using the highly interactive Plotly library:
 - **High-Precision Heatmap Calendar:** A discrete mapping of Date (Y-axis) versus Pass Start-Time Hour (X-axis). All viable observation passes are injected individually without blending.
 - **Interactive Tooltips:** Users can hover specifically over any mapped block to instantaneously review the exact pass index, UTC timings, and computed Suitability Score.
+- **Solar Cycle Chart Integration:** The background of the time axis dynamically reflects the targeted geographic location's actual solar schedule calculated via `skyfield.almanac`. Deep blue areas highlight night passes, thick orange bands designate golden hour conditions during sunrise/sunset, and a yellow center illustrates peak daylight hours.
 
 All visualizations natively scale and adjust dynamically matching the user's selected 7, 14, or 21-day constraints.
 
 ## Next Phases / Roadmap
 
 - [x] **Suitability Index Generation:** Score each pass based on exact max elevation and pass duration.
+- [x] **Solar/Temporal Context Mapping:** Map passes against true calculated sunrise/sunset cycles to contextualize lighting conditions.
 - [ ] **Data Pipeline Integration:** Connect output CSV directly to GeoPandas automated workflows.
 - [ ] **Multi-Satellite Support:** Expand from FireSat-0 to track the full FireSat constellation as more satellites launch (planned for 50+ satellites by 2030).
 - [ ] **Cloud Cover API Integration:** Cross-reference passes with location-specific weather forecasts to weed out obscured optical passes.
