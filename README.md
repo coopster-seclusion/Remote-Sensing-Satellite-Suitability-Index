@@ -35,25 +35,25 @@ With a 1,500 km swath from a ~587 km altitude, the satellite has a very wide fie
    *(Note: using `python -m streamlit run app.py` ensures it runs even if the Streamlit executable isn't on your system's PATH)*
 2. The web frontend will open in your default browser automatically (`http://localhost:8501`).
 3. Input the **latitude** and **longitude** of your target.
-4. Select the forecast range (up to 14 days) and your local timezone.
-5. Click **Predict Passes**.
+4. Select the forecast range (7, 14, or 21 days) and your local timezone.
+5. Click **Run Prediction**.
 
 ## Outputs
 The app outputs a table of viable satellite passes containing:
 - **Rise Time (Local):** Local timestamp for the start of the pass.
 - **Max Elevation:** The peak elevation of the satellite during the pass.
 - **Duration:** How long the pass lasts in seconds.
-- **Quality Score:** A suitability index normalized between 0-1, based equally on the maximum elevation (higher is better) and duration (longer is better) of the pass.
+- **Quality Score:** A rigorous Suitability Index mathematical score normalized between 0-1. Calculation uses a trigonometric formula based on the true max elevation of the pass factoring in observing atmospheric distortion.
 - **Pass Start/Peak/End (UTC ISO-8601):** Standardized, machine-readable datetime strings. Perfect for indexing in GeoPandas via `pd.to_datetime(...)`.
 
 You can download this table as a CSV directly from the application.
 
 ### Visualizations
-The app automatically generates dynamic visual outputs using the Matplotlib library:
-- **Timeline Scatter Plot:** A timeline displaying all valid imaging windows over the requested forecast range. Circle size and color represent the `Quality Score` (darker/larger = better). The single most optimal pass is directly annotated.
-- **Quality Comparison Plot:** Scatter plot showing the relationship between Max Elevation and Pass Duration.
+The app automatically generates dynamic visual outputs using the highly interactive Plotly library:
+- **High-Precision Heatmap Calendar:** A discrete mapping of Date (Y-axis) versus Pass Start-Time Hour (X-axis). All viable observation passes are injected individually without blending.
+- **Interactive Tooltips:** Users can hover specifically over any mapped block to instantaneously review the exact pass index, UTC timings, and computed Suitability Score.
 
-All visualizations are fully interactive and adjust dynamically to the constraints provided.
+All visualizations natively scale and adjust dynamically matching the user's selected 7, 14, or 21-day constraints.
 
 ## Next Phases / Roadmap
 
