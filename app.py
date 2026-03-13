@@ -1,67 +1,16 @@
 import streamlit as st
 import pandas as pd
 import re
-from skyfield.api import wgs84, load, EarthSatellite
 import pytz
-from datetime import timedelta
 from visualization import plot_suitability
+from calculations import fetch_satellite_data, calculate_passes
 
 st.set_page_config(page_title="FireSat Pass Predictor", page_icon="🛰️", layout="centered")
 
 @st.cache_resource(ttl=3600)
 def get_satellite_data():
     """Fetch the latest TLE data from Celestrak for FIRESAT 0."""
-    stations_url = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=63256'
-    satellites = load.tle_file(stations_url)
-    if satellites:
-        return satellites[0]
-    return None
-
-def calculate_passes(satellite, lat, lon, days):
-    """
-    Calculate imaging passes. 
-    A 1500km swath from a 587km orbit translates to roughly a 33.4 degree minimum elevation angle
-    from the observer's perspective to be within the observable ground swath.
-    """
-    min_elevation = 33.4  # Minimum viable elevation for the 1500km FireSat swath at 587km altitude
-    
-    ts = load.timescale()
-    t0 = ts.now()
-    t1 = ts.utc(t0.utc_datetime() + timedelta(days=days))
-    
-    # Define the observer location
-    observer = wgs84.latlon(lat, lon)
-    
-    # Calculate passes
-    t, events = satellite.find_events(observer, t0, t1, altitude_degrees=min_elevation)
-    
-    passes = []
-    current_pass = {}
-    
-    for ti, event in zip(t, events):
-        if event == 0:  # Rise
-            current_pass['rise_time'] = ti
-        elif event == 1:  # Culminate
-            current_pass['culminate_time'] = ti
-            # Calculate elevation
-            difference = satellite - observer
-            topocentric = difference.at(ti)
-            alt, az, distance = topocentric.altaz()
-            current_pass['max_elevation'] = alt.degrees
-        elif event == 2:  # Set
-            current_pass['set_time'] = ti
-            if 'rise_time' in current_pass:
-                # Calculate duration in seconds
-                duration_seconds = (current_pass['set_time'] - current_pass['rise_time']) * 24 * 60 * 60
-                
-                # Only save passes that actually cross the 33.4 degree threshold 
-                # (find_events sometimes flags an event if max elevation barely clips it or fails)
-                if current_pass.get('max_elevation', 0) >= 33.4:
-                    current_pass['duration_seconds'] = duration_seconds
-                    passes.append(current_pass)
-            current_pass = {}
-            
-    return passes
+    return fetch_satellite_data()
 
 st.title("🛰️ FireSat Imaging Windows")
 st.markdown("""
@@ -136,6 +85,7 @@ if predict_standard or predict_interactive:
                             "Rise Time (Local)": rise_local.strftime('%Y-%m-%d %H:%M:%S %Z'),
                             "Max Elevation (deg)": round(p['max_elevation'], 1),
                             "Duration (sec)": round(p['duration_seconds']),
+                            "Quality Score": p['suitability_index'],
                             "Pass Start (UTC ISO-8601)": rise_utc.strftime('%Y-%m-%dT%H:%M:%SZ'),
                             "Pass Peak (UTC ISO-8601)": culminate_utc.strftime('%Y-%m-%dT%H:%M:%SZ'),
                             "Pass End (UTC ISO-8601)": set_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -145,15 +95,6 @@ if predict_standard or predict_interactive:
                         continue
                 
                 df = pd.DataFrame(pass_data)
-                
-                # Calculate a "Window Quality Score"
-                # Normalizing both elevation and duration to give a score between 0 and 1
-                df['elev_norm'] = df['Max Elevation (deg)'] / 90.0
-                df['dur_norm'] = df['Duration (sec)'] / df['Duration (sec)'].max()
-                df['Quality Score'] = ((df['elev_norm'] + df['dur_norm']) / 2).round(3)
-                
-                # Drop temporary normalization columns 
-                df.drop(columns=['elev_norm', 'dur_norm'], inplace=True)
 
                 df.set_index("Setup/Pass Index", inplace=True)
                 
