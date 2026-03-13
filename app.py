@@ -63,9 +63,9 @@ def calculate_passes(satellite, lat, lon, days):
             
     return passes
 
-st.title("🛰️ FireSat (Muon Space) Imaging Windows")
+st.title("🛰️ FireSat Imaging Windows")
 st.markdown("""
-This app predicts overhead passes for the **FIRESAT 0 (MUSAT-4)** satellite (NORAD ID: 63256) 
+This beta app predicts overhead passes for the **FIRESAT 0 (MUSAT-4)** satellite (NORAD ID: 63256) 
 over a specified geographic location. 
 
 ### Sensing Parameters
